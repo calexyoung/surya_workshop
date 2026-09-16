@@ -552,6 +552,7 @@ everything else.
 | `1_baseline_ar.ipynb` | The 14-parameter baseline, the scorecard, a training loop |
 | `2_finetune_ar.ipynb` | Surya plus adapters, with the same data, scorecard and loop |
 | `3_errors_ar.ipynb` | Error bars, calibration, confidence contours, ensembles, label floor |
+| `ERRORS_NOTEBOOK_EXPLAINED.md` | Plain-language guide to that notebook |
 | `configs/config_script.yaml` | The single run configuration |
 | `configs.py` | The task-specific configuration keys |
 | `datasets/ar_dataset.py` | Exact-timestamp pairing of image index and outline index |

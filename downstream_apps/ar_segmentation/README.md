@@ -17,7 +17,7 @@ difference between the two numbers is the value the foundation model adds.
 | `0_dataset_dataloader_ar.ipynb` | walk-through: pairing SDO stacks with masks, inspecting and plotting samples |
 | `1_baseline_ar.ipynb` | walk-through: the 14-parameter baseline, the metrics, a Lightning training loop |
 | `2_finetune_ar.ipynb` | walk-through: Surya + LoRA with the same data, metrics and loop (GPU) |
-| `3_errors_ar.ipynb` | walk-through: bootstrap intervals, calibration, confidence contours, seed ensembles, the label floor |
+| `3_errors_ar.ipynb` | walk-through: bootstrap intervals, calibration, confidence contours, seed ensembles, the label floor (explained in `ERRORS_NOTEBOOK_EXPLAINED.md`) |
 | `configs.py` | `ARDataConfig`: the task-specific `data:` keys (`ar_mask_dir`, `ar_mask_key`, `ar_pooling`, `ar_pos_weight`, `ar_threshold`) |
 | `configs/config_script.yaml` | the single run config |
 | `datasets/ar_dataset.py` | `ARSegmentationDataset`: exact-timestamp pairing of Surya index and mask index |
