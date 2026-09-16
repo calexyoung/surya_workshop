@@ -249,6 +249,7 @@ How well it matches, measured as overlap (IoU) with the released maps on cached 
 | Order matters: size filter **before** dilation | reversing it collapses agreement to 0.01–0.09 |
 | "Rectangular filter of size 10" = square brush grown 10 px, not a disc and not a 10 × 10 box | on 12 timestamps: PIL agreement better on 12/12 (median 0.74 → 0.80); footprint agreement better on 9/12 (median ≈ 0.85 → 0.86); a 10 × 10 box scores 0.70 |
 | Well-behaved days reproduce closely | 2011-01-16: footprints 0.66–0.92, PILs 0.72–0.85 |
+| On the sixty January-2013 validation images of the full run | all 60 above 0.6; median footprint agreement 0.81 with the square brush, 0.83 with a disc on the same images — the two are within noise of each other on footprints, and the paper's wording decides |
 | The first days of the mission do not | 2010-05-13: footprints ≈ 0.0–0.18 |
 
 The 2010 failure has a plausible explanation now that the dataset's history is known: those
