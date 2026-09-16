@@ -321,10 +321,13 @@ in the notebook:
    so; the notebook had not honoured it.
 
 The same budget after the fixes: overlap 0.041, recall 0.043 — no longer at the floor, but
-still a two-pass, eight-image model. At the `medium` budget, after one pass over sixty
-images: **overlap 0.435, precision 0.52, recall 0.73** — a real segmentation, with the `dice`
-term down from 0.98 to 0.23. (That run was in progress when this was written; its final
-numbers belong in the notebook's own output.)
+still a two-pass, eight-image model. At the `medium` budget the picture is a real segmentation: overlap 0.435 after the first pass
+over sixty images, and — with the best epoch kept rather than the last, and the calibration
+split at random — **0.437 (95 % interval 0.424–0.449) at the default cut, 0.465 at the best
+calibrated cut**, with the `dice` term down from 0.98 to 0.23. The two seeds differ by 0.025,
+about the width of one seed's interval, so the honest report is the pair, not a single number.
+The label floor came out at 0.632, and the best model at 0.459 sits well below it: the
+remaining error is the model's, not the definition's.
 
 The lesson the example teaches is the one the notebook exists for: a loss going down told us
 nothing. The pair of precision and recall told us everything.

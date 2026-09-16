@@ -519,7 +519,8 @@ came from.
 |---|---|---|---|---|---|
 | smoke, original | 1 | 0.000035 | 1.00 | 0.000035 | loss kept improving; the model stopped predicting anything |
 | smoke, fixed | 1 | 0.041 | 0.40 | 0.043 | off the floor; still an 8-image model |
-| medium | 0 | 0.435 | 0.52 | 0.73 | a real segmentation (run in progress when written) |
+| medium, seed 0 | 0 | 0.435 | 0.52 | 0.73 | a real segmentation from the first pass |
+| medium, final analysis | best epoch | 0.437 [0.424, 0.449] | | | best calibrated cut 0.465; seeds 0.459 / 0.417; label floor 0.632 |
 
 The three causes: the images were the quietest in the archive (a naive date cap), the rare
 pixels were not up-weighted, and the foundation model was training at ten times its
