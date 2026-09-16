@@ -219,7 +219,11 @@ region? The reliability diagram plots that for every confidence level. An honest
 the diagonal; a typical neural network sits below it, overstating its confidence.
 
 The fix is two numbers, fitted after training, that rescale and shift the raw scores. Crucially
-the notebook fits them on one half of the validation images and reports on the other half.
+the notebook fits them on a **random** half of the validation images and reports on the other half —
+random rather than first-and-second, because the validation images are in time order and the
+Sun rotates: on the sixty-image run the first half scored 0.47 and the second 0.37 as the
+regions drifted toward the limb (per-image overlap tracks distance from disk centre at
+r = −0.94). A random split gives 0.44 versus 0.40, which is noise.
 Fitting and reporting on the same images is how calibration comes to look better than it is.
 
 Calibration barely changes the best achievable overlap — it only rescales, so the ranking of

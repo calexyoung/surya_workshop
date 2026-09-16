@@ -477,8 +477,9 @@ narrows as images are added, which is how to decide how many you need.
 ### Step 8 — Reliability diagram and calibration
 
 Of all pixels the model scored near 0.7, were 70 % really active region? The diagram answers
-that; the fix is two numbers fitted on one half of the validation set and reported on the
-other. Calibration barely changes the achievable overlap — it only rescales — but it is what
+that; the fix is two numbers fitted on a random half of the validation set and reported on the
+other — random, because the validation images are in time order and the Sun rotates, so the
+first half is systematically easier than the second (0.47 versus 0.37 on the sixty-image run). Calibration barely changes the achievable overlap — it only rescales — but it is what
 makes the next step's contours mean something.
 
 ### Step 9 — Confidence contours
