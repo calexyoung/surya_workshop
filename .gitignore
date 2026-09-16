@@ -237,3 +237,11 @@ wandb/
 # AR segmentation: the mask dataset is a ~6 GB download (or a symlink to one).
 # Fetch it with downstream_apps/ar_segmentation/download_masks.sh
 downstream_apps/ar_segmentation/data/
+
+# Analysis files
+*.json
+unified_report.md
+variance_accounting.txt
+
+# ...but the archify diagram spec is source, not an analysis output.
+!downstream_apps/ar_segmentation/diagrams/*.json
