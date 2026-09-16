@@ -1,4 +1,4 @@
-# What These Three Notebooks Actually Do
+# What These Four Notebooks Actually Do
 
 A plain-language walkthrough of the active-region (AR) segmentation example in
 `downstream_apps/ar_segmentation/`, written for readers who are not machine-learning
@@ -6,12 +6,12 @@ specialists.
 
 The goal of the exercise: teach a computer to look at pictures of the Sun and outline the
 **active regions** — the blotchy, magnetically violent patches that produce solar flares.
-Three notebooks split this into *get the data*, *try something deliberately dumb*, *try
-something big*.
+Four notebooks split this into *get the data*, *try something deliberately dumb*, *try
+something big*, and *find out how much to trust the result*.
 
 The whole exercise is really a **measurement**, not a model-building project. Notebook 1
-exists to produce a number that Notebook 2 has to beat. Everything else is arranged to make
-that comparison fair.
+exists to produce a number that Notebook 2 has to beat, and Notebook 3 exists to say whether
+the difference between them is real. Everything else is arranged to make that comparison fair.
 
 ---
 
@@ -23,9 +23,10 @@ that comparison fair.
 4. [Notebook 1 — the deliberately dumb baseline](#notebook-1--the-deliberately-dumb-baseline)
 5. [What "the baseline image" is](#what-the-baseline-image-is)
 6. [Notebook 2 — fine-tuning Surya](#notebook-2--fine-tuning-surya)
-7. [Estimating error: confidence contours on the outlines](#estimating-error-confidence-contours-on-the-outlines)
-8. [A concrete order of work](#a-concrete-order-of-work)
-9. [Quick reference](#quick-reference)
+7. [Notebook 3 — measuring the error](#notebook-3--measuring-the-error)
+8. [Estimating error: the reasoning behind Notebook 3](#estimating-error-confidence-contours-on-the-outlines)
+9. [The order of work, and what it found](#a-concrete-order-of-work)
+10. [Quick reference](#quick-reference)
 
 ---
 
@@ -63,7 +64,8 @@ This is the part most people assume involves a human expert. It does not, and th
 enormously for everything downstream.
 
 Nobody hand-drew these outlines. They were produced by a **fixed mechanical rule** applied to
-one specific measurement: a map of the Sun's magnetic field, made every hour by an instrument
+one specific measurement (the rule is published: Roy *et al.*, *Scientific Data* 13, 712, 2026 —
+see `GROUND_TRUTH_EXPLAINED.md` for the full account): a map of the Sun's magnetic field, made every hour by an instrument
 aboard the Solar Dynamics Observatory. Think of that map as a grayscale image where bright
 means "magnetic field pointing toward us," dark means "pointing away," and mid-gray means
 "not much field here."
@@ -77,7 +79,7 @@ of strong field, both bright and dark.
 **2. Drop the small stuff.** Any surviving blob smaller than about 100 pixels is thrown away
 as noise or a minor feature.
 
-**3. Grow the edges.** Each remaining blob is expanded outward by about 10 pixels. This fills
+**3. Grow the edges.** Each remaining blob is expanded outward by 10 pixels with a square brush. This fills
 pinholes and merges blobs that are obviously part of the same structure.
 
 **4. Require a dividing line.** This is the crucial step. Keep a region **only if** it
@@ -99,9 +101,11 @@ Each hourly file stores two outlines:
 
 Switch between them with `data.ar_mask_key` in the config.
 
-**The number to hold onto: marked regions cover roughly 1.3% of the visible disk** — about 80
-background pixels for every active-region pixel. Every scoring decision in this example follows
-from that one fact.
+**The number to hold onto: marked regions cover between 0.02 % and 1.8 % of the frame,
+depending on the year.** Near solar maximum (2011–2015) it is around 1 % — roughly 55 to 100
+background pixels for every active-region pixel; near minimum it is a tenth of that or less,
+up to 4,000 to 1. Every scoring decision in this example follows from that imbalance, and
+Notebook 3 shows what happens when the years are chosen carelessly.
 
 ---
 
@@ -401,7 +405,138 @@ Same figure as the baseline, so the two can be compared by eye as well as by num
 
 ---
 
+## Notebook 3 — measuring the error
+
+`3_errors_ar.ipynb`
+
+Notebooks 1 and 2 each end with one number. This notebook asks how much that number can be
+trusted, and the honest answer has four parts: would a different handful of images give a
+different score; is the model's confidence honest; would training again give a different
+model; and is the answer key precise enough to be measured against at this resolution. It
+replaces the single number with an interval for each, then asks whether the gap between two
+models is bigger than all of them.
+
+It is the most detailed of the four and is documented on its own in
+`ERRORS_NOTEBOOK_EXPLAINED.md`; every one of its cells also carries its explanation inline.
+What follows is the shape of it.
+
+### Step 1 — Choose a budget, and the five knobs
+
+One cell holds everything adjustable. `BUDGET` picks `smoke` (8 images, minutes, numbers that
+are noise by design), `medium` (60 images, hours, enough to tell whether the setup is sound)
+or `real` (400 images, days). `MODEL_KIND` switches between the foundation model and the
+14-number baseline. Three more knobs exist because of what the first run of this notebook
+revealed — see "What it found" below. The learning rate is chosen per model here, honouring the
+config's own note that the foundation model needs ten times the gentleness of the baseline.
+
+### Step 2 — Choose *which* images, not just how many
+
+The dataset sorts by date, so a naive cap takes the earliest images — January 2011, near solar
+minimum, one active-region pixel in a thousand. Coverage three years later is one in fifty-five.
+`SAMPLE_SELECTION` restricts both training and validation to a date window by default; a
+`stratified` option spreads across the whole cycle instead. There is deliberately no option to
+pick the validation images with the most active regions, because that would make every score
+look better than it is.
+
+### Step 3 — Measure the imbalance, then weight for it
+
+The notebook reads the selected outlines and reports the true coverage, the imbalance, and a
+weight derived from it that makes each active-region pixel count for more. Without this, a
+model can do well on the training objective by answering "background" everywhere.
+
+### Step 4 — Warm the cache in parallel
+
+Every image the run needs is downloaded up front, sixteen at a time, so training never stalls
+on a file. It reuses the loader's own naming and download code; already-cached files are
+skipped. The container's real memory and CPU limits are read from `/sys/fs/cgroup/` — not from
+`free` and `nproc`, which describe the whole node — and the number of loading processes is sized
+from them, with the arithmetic printed.
+
+### Step 5 — Train the members
+
+One function builds the model, another trains it under a seed and caches the result under a
+key that includes every setting affecting training. This is the only expensive cell. Member 0
+is the model the next three steps use; the rest exist for Step 10.
+
+### Step 6 — Cache the predictions as histograms
+
+One pass over the validation images stores, per image, a histogram of the model's raw scores
+split by true label — a few thousand numbers instead of a 16.8-million-pixel map. From that,
+the overlap at *any* threshold, the reliability diagram and the calibration all follow exactly
+and instantly. Full maps are kept only for the two or three images the contour figures need.
+
+### Step 7 — Bootstrap intervals
+
+The score is computed from a sample, so it has sampling error. Re-drawing the images with
+replacement a few thousand times gives a 95 % interval. Two versions — pooled over pixels, and
+per image — because they answer different questions. A second plot shows how the interval
+narrows as images are added, which is how to decide how many you need.
+
+### Step 8 — Reliability diagram and calibration
+
+Of all pixels the model scored near 0.7, were 70 % really active region? The diagram answers
+that; the fix is two numbers fitted on one half of the validation set and reported on the
+other. Calibration barely changes the achievable overlap — it only rescales — but it is what
+makes the next step's contours mean something.
+
+### Step 9 — Confidence contours
+
+The boundary is drawn at 0.25, 0.5 and 0.75 on the calibrated map. Where the curves coincide
+the model is decisive; where they spread, the band is its uncertainty on the outline. Nothing
+finer than the model's 16-pixel tile is meaningful, and the figures respect that.
+
+### Step 10 — An ensemble of seeds
+
+Training again from a different random start gives a slightly different model. The members'
+average is a better prediction than any one of them; their disagreement, pixel by pixel, is a
+genuine uncertainty map that lights up along region boundaries. The spread of the *score*
+across seeds is compared with one seed's bootstrap width: if they are similar, a single run's
+number cannot be quoted to the precision people usually quote it at.
+
+### Step 11 — The label floor
+
+The outlines come from a rule with arbitrary settings. The notebook re-runs that rule at ±40
+and ±60 gauss and measures how far the "truth" moves. Two equally defensible answer keys that
+agree only to some level set a floor below which no model score can be resolved. Because the
+rule is re-implemented from its published description, the notebook first scores the
+re-implementation against the real outlines and computes the floor only where they agree.
+
+### Step 12 — Everything against the floor
+
+A final table: every score with its interval, next to the floor. The question it answers is
+whether the gap between models is larger than the uncertainty in measuring it *and* larger
+than the ambiguity in the definition it is measured against.
+
+### What it found
+
+The first run of the notebook collapsed — and diagnosing that is where three of the five knobs
+came from.
+
+| run | epoch | overlap | precision | recall | what happened |
+|---|---|---|---|---|---|
+| smoke, original | 1 | 0.000035 | 1.00 | 0.000035 | loss kept improving; the model stopped predicting anything |
+| smoke, fixed | 1 | 0.041 | 0.40 | 0.043 | off the floor; still an 8-image model |
+| medium | 0 | 0.435 | 0.52 | 0.73 | a real segmentation (run in progress when written) |
+
+The three causes: the images were the quietest in the archive (a naive date cap), the rare
+pixels were not up-weighted, and the foundation model was training at ten times its
+recommended rate. The lesson is the one the notebook exists to teach — the loss going down told
+us nothing; precision and recall together told us everything.
+
+Two things it found about the *answer key* are recorded in `GROUND_TRUTH_EXPLAINED.md`: the
+published dilation is a square brush, not a disc (the notebook was corrected to match), and
+the rule does not reproduce the May 2010 outlines from the magnetograms served here, so the
+floor is never computed from them.
+
+---
+
 ## Estimating error: confidence contours on the outlines
+
+*This section was written before Notebook 3 existed and explains the reasoning behind it. The
+notebook implements it: Source 1 is Steps 8–9, Source 2 is Step 10 (adapter ensembles; the
+test-time augmentation and dropout ideas below remain future work — both dropout settings in
+the config are 0.0), Source 3 is Step 11, and "Error bars on the score itself" is Step 7. The
+per-region framing at the end is not yet implemented.*
 
 You want to know not just *where* the model thinks an active region is, but *how sure it is* —
 and how much of any disagreement with the answer key is the model's fault versus the answer
@@ -527,18 +662,19 @@ express it naturally.
 
 ## A concrete order of work
 
-1. **Raise the sample cap and epoch count** so the numbers mean anything at all.
-2. **Add bootstrap intervals** to the reported scores. Cheap, and it tells you immediately
-   whether you have enough data to say anything.
-3. **Plot the reliability diagram** and fit the temperature correction.
-4. **Draw multi-level contours** on the calibrated confidence map. You now have publishable
-   uncertainty figures with no retraining.
-5. **Train five adapter sets** from different seeds; use the ensemble average and spread.
-6. **Regenerate the answer key** at ±40/±60 gauss to establish the error floor, and report
-   every model score against that floor.
+This was the plan; all six items are now implemented in `3_errors_ar.ipynb`.
 
-Steps 1–4 need no new training runs. Step 6 is the one that changes how you interpret
-everything else.
+| # | item | where | status and what it found |
+|---|---|---|---|
+| 1 | Raise the sample cap and epoch count | Step 1 (`BUDGET` presets) | Done. Raising the cap alone was not enough — *which* images mattered more, hence Step 2. |
+| 2 | Bootstrap intervals on the scores | Step 7 | Done, pooled and per-image, plus the width-vs-count plot. At 8 images the interval spans most of the range the score can take. |
+| 3 | Reliability diagram and calibration | Step 8 | Done, fitted on half the validation set and reported on the other half. |
+| 4 | Multi-level contours on the calibrated map | Step 9 | Done, at 0.25 / 0.5 / 0.75, respecting the 16-pixel floor. |
+| 5 | An ensemble of adapter seeds | Step 10 | Done; the preset chooses two or five members. |
+| 6 | Regenerate the answer key at ±40 / ±60 G | Step 11 | Done, and gated on the re-implementation agreeing with the real outlines first. |
+
+Items 2–4 needed no new training. Item 6 remains the one that changes how everything else is
+read — and it also surfaced the two answer-key findings recorded in `GROUND_TRUTH_EXPLAINED.md`.
 
 ---
 
@@ -572,12 +708,14 @@ everything else.
 | Channels | 13 (8 ultraviolet, 5 magnetic) |
 | Image cadence | every 12 minutes |
 | Outline cadence | hourly — so only 1 image in 5 can pair |
-| Active-region coverage | ~1.3% of the disk (~80:1 imbalance) |
+| Active-region coverage | 0.02 %–1.8 % of the frame by year: ~55:1 at solar maximum, >4,000:1 at minimum |
 | Baseline size | 14 parameters |
 | Backbone size | 366 M parameters |
 | Trained under the default regime | ~3 M (under 1%) |
 | Tile size, and the boundary resolution floor | 16 pixels |
 | Coin-flip penalty value | 0.69 |
+| Re-implementation of the labelling rule | overlap ≈ 0.85–0.92 with the real outlines on good days; fails on May 2010 |
+| Container limits the sizing uses | read from `/sys/fs/cgroup/` — here 60 GB and 7 cores, not the node's 124 GB and 16 |
 
 ### Config keys specific to this task
 
