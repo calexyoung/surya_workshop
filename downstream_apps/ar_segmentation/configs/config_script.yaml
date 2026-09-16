@@ -39,7 +39,11 @@ data:
   # -- S3 (the indices above point at the public nasa-surya-bench bucket) --
   s3_anon: true
   s3_mode: download
-  s3_cache_dir: /home/jovyan/.cache/surya_workshop/helio_s3_cache                  # set here, via --s3-cache-dir, or $SURYA_WS_CACHE_DIR
+  # EFS scratch: effectively unlimited, unlike /home/jovyan (98 GB total). At ~590 MB
+  # per timestep, a few hundred samples will not fit on the home volume.
+  # Precedence is --s3-cache-dir > this value > $SURYA_WS_CACHE_DIR, so set this to
+  # null to pick the location up from the environment instead.
+  s3_cache_dir: /home/jovyan/scratch_space/cayoung/surya_s3_cache
   s3_boto3_max_concurrency: 4
   s3_boto3_part_size_mb: 64
 
