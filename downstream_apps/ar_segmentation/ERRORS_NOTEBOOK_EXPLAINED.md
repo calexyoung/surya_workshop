@@ -170,6 +170,14 @@ retraining. The cache key includes every setting that changes what training does
 that, a checkpoint from a failed configuration would reload silently and a fix would appear
 to do nothing.
 
+Two more behaviours of the training function are worth knowing. It keeps the epoch with the
+lowest validation loss — Lightning selects it, and the function restores those weights before
+caching them, so later steps never analyse an overfit final epoch. And if an earlier run with
+the same settings already left such a checkpoint on disk, the function **adopts** it instead of
+training again, so re-running the analysis after a code change costs minutes rather than hours.
+Training also stops early once validation loss has not improved for `EARLY_STOP_PATIENCE`
+epochs; on the first sixty-image run the best epoch was the second of ten.
+
 The training objective is defined here. Rather than editing the app's shared scoring code, the
 notebook extends it in place, adding the optional overlap term. The app's own tests are left
 untouched.
@@ -353,6 +361,7 @@ labelling rule (blob size and edge growth), not just the threshold.
 | `SAMPLE_SELECTION` | `"window"` (2013–2015) | `"stratified"`, `"head"` |
 | `POS_WEIGHT_MODE` | `"sqrt"` | `"full"`, `"off"`, or a number |
 | `LOSS` | `"bce+dice"` | `"bce"` |
+| `EARLY_STOP_PATIENCE` | `3` | `None` to train every epoch |
 | workers | derived from the container's limits, capped at 4 | edit the cap if the GPU is idle |
 
 ### Outputs, in order

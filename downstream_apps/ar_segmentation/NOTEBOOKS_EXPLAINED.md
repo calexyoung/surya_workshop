@@ -425,7 +425,7 @@ What follows is the shape of it.
 One cell holds everything adjustable. `BUDGET` picks `smoke` (8 images, minutes, numbers that
 are noise by design), `medium` (60 images, hours, enough to tell whether the setup is sound)
 or `real` (400 images, days). `MODEL_KIND` switches between the foundation model and the
-14-number baseline. Three more knobs exist because of what the first run of this notebook
+14-number baseline. Four more knobs exist because of what the first runs of this notebook
 revealed — see "What it found" below. The learning rate is chosen per model here, honouring the
 config's own note that the foundation model needs ten times the gentleness of the baseline.
 
@@ -455,8 +455,10 @@ from them, with the arithmetic printed.
 ### Step 5 — Train the members
 
 One function builds the model, another trains it under a seed and caches the result under a
-key that includes every setting affecting training. This is the only expensive cell. Member 0
-is the model the next three steps use; the rest exist for Step 10.
+key that includes every setting affecting training. It keeps the epoch with the lowest
+validation loss rather than the last one, stops early once that stops improving, and adopts a
+matching checkpoint from an earlier run instead of retraining if one exists. This is the only
+expensive cell. Member 0 is the model the next three steps use; the rest exist for Step 10.
 
 ### Step 6 — Cache the predictions as histograms
 
@@ -520,7 +522,8 @@ came from.
 
 The three causes: the images were the quietest in the archive (a naive date cap), the rare
 pixels were not up-weighted, and the foundation model was training at ten times its
-recommended rate. The lesson is the one the notebook exists to teach — the loss going down told
+recommended rate. The sixty-image run then showed a fourth thing: the best epoch was the
+second of ten, and the notebook had been caching the last — fixed, with early stopping added. The lesson is the one the notebook exists to teach — the loss going down told
 us nothing; precision and recall together told us everything.
 
 Two things it found about the *answer key* are recorded in `GROUND_TRUTH_EXPLAINED.md`: the
