@@ -248,3 +248,7 @@ variance_accounting.txt
 
 # heliowork run logs (machine-specific)
 downstream_apps/heliowork/logs/
+
+# Per-app run artefacts: Lightning CSV logs and checkpoints, nbconvert outputs,
+# watchdog logs. The notebooks write these under <app>/runs/.
+downstream_apps/*/runs/
