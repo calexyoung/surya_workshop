@@ -245,3 +245,6 @@ variance_accounting.txt
 
 # ...but the archify diagram spec is source, not an analysis output.
 !downstream_apps/ar_segmentation/diagrams/*.json
+
+# heliowork run logs (machine-specific)
+downstream_apps/heliowork/logs/
