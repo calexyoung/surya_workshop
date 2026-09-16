@@ -26,6 +26,7 @@ difference between the two numbers is the value the foundation model adds.
 | `lightning_modules/pl_segmentation.py` | reuses the template's task-agnostic Lightning module |
 | `finetune_ar_segmentation.py` | training script; `--train_baseline` switches model |
 | `download_masks.sh` | fetches and extracts the mask dataset into `data/` |
+| `GROUND_TRUTH_EXPLAINED.md` | how the mask dataset is made, what it means, how faithfully it can be reproduced |
 
 Tests: `pytest tests/test_ar_segmentation.py` (CPU, seconds).
 
