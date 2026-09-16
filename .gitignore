@@ -228,3 +228,12 @@ wandb/
 *.gz
 *.7z
 *.rar
+# macOS
+.DS_Store
+
+# Claude chat transcripts
+*.chat
+
+# AR segmentation: the mask dataset is a ~6 GB download (or a symlink to one).
+# Fetch it with downstream_apps/ar_segmentation/download_masks.sh
+downstream_apps/ar_segmentation/data/
