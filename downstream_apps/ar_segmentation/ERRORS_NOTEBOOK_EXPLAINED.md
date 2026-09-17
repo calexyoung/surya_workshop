@@ -365,7 +365,7 @@ labelling rule (blob size and edge growth), not just the threshold.
 |---|---|---|
 | `BUDGET` | `"medium"` | `"smoke"`, `"real"` |
 | `MODEL_KIND` | `"surya"` | `"baseline"` |
-| `SAMPLE_SELECTION` | `"window"` (2013–2015) | `"stratified"`, `"head"` |
+| `SAMPLE_SELECTION` | `"window-stratified"` (spread across 2013–2015) | `"window"`, `"stratified"`, `"head"` |
 | `POS_WEIGHT_MODE` | `"sqrt"` | `"full"`, `"off"`, or a number |
 | `LOSS` | `"bce+dice"` | `"bce"` |
 | `EARLY_STOP_PATIENCE` | `3` | `None` to train every epoch |
