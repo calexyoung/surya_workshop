@@ -27,6 +27,7 @@ difference between the two numbers is the value the foundation model adds.
 | `finetune_ar_segmentation.py` | training script; `--train_baseline` switches model |
 | `download_masks.sh` | fetches and extracts the mask dataset into `data/` |
 | `GROUND_TRUTH_EXPLAINED.md` | how the mask dataset is made, what it means, how faithfully it can be reproduced |
+| `RESULTS_REPORT.md` | all measured results so far: the collapse and fixes, medium and real budgets, the limb effect, the label floor, machine findings |
 
 Tests: `pytest tests/test_ar_segmentation.py` (CPU, seconds).
 

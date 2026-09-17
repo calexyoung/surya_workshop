@@ -695,6 +695,7 @@ read — and it also surfaced the two answer-key findings recorded in `GROUND_TR
 | `3_errors_ar.ipynb` | Error bars, calibration, confidence contours, ensembles, label floor |
 | `ERRORS_NOTEBOOK_EXPLAINED.md` | Plain-language guide to that notebook |
 | `GROUND_TRUTH_EXPLAINED.md` | How the answer-key outlines are made, and how faithfully the rule reproduces |
+| `RESULTS_REPORT.md` | Every result measured so far, in one place |
 | `configs/config_script.yaml` | The single run configuration |
 | `configs.py` | The task-specific configuration keys |
 | `datasets/ar_dataset.py` | Exact-timestamp pairing of image index and outline index |
