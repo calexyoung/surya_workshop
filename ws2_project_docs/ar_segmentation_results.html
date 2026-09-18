@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Active-Region Segmentation — Results</title>
+
+<!-- ===========================================
+     FONTS — Swiss Modern pairing
+     Archivo (800/900) for display, Nunito for body.
+     Swap these two links + --font-* vars to retype the deck.
+     =========================================== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;800;900&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   THEME TOKENS
+   Change these to change the whole deck.
+   =========================================== */
+:root{
+    --stage-bg:#101010;          /* letterbox surround */
+    --slide-bg:#ffffff;          /* paper */
+    --paper:#ffffff;
+    --ink:#0a0a0a;
+    --red:#ff3300;               /* the single accent */
+    --red-soft:#fff0eb;
+    --grey:#8a8a8a;
+    --grey-deep:#3a3a3a;
+    --rule:#e2e2e2;
+
+    --font-display:'Archivo',sans-serif;
+    --font-body:'Nunito',sans-serif;
+
+    /* Authored at the 1920x1080 stage size — never viewport units */
+    --margin-x:140px;
+    --title-size:120px;
+    --h2-size:82px;
+    --lede-size:32px;
+    --body-size:26px;
+
+    --ease:cubic-bezier(.16,1,.3,1);
+    --dur:.7s;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   Slides are authored at 1920x1080 and the whole
+   stage is scaled by JS. Do not reflow per device.
+   =========================================== */
+
+/* 1. Lock the browser viewport */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas.
+   JavaScript sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+/* 4. Slides stack inside the fixed stage.
+   Content must be laid out at 1920×1080, not reflowed per device. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+/* 5. Keep media inside authored slide bounds */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SWISS CONSTRUCTION GRID
+   Faint vertical/horizontal rules visible on every
+   slide — the "showing your work" of Swiss layout.
+   =========================================== */
+.grid{position:absolute;inset:0;pointer-events:none;z-index:0}
+.grid i{position:absolute;top:0;bottom:0;width:1px;background:var(--rule)}
+.grid b{position:absolute;left:0;right:0;height:1px;background:var(--rule)}
+
+/* ===========================================
+   SLIDE FRAME — shared chrome on content slides
+   =========================================== */
+.frame{position:absolute;inset:0;padding:0 var(--margin-x);z-index:2}
+.kicker{position:absolute;left:var(--margin-x);top:88px;
+    font:600 20px/1 var(--font-display);letter-spacing:.32em;text-transform:uppercase;color:var(--red)}
+.idx{position:absolute;right:var(--margin-x);top:82px;
+    font:900 30px/1 var(--font-display);letter-spacing:-.02em;color:var(--rule)}
+.hrule{position:absolute;left:var(--margin-x);right:var(--margin-x);top:158px;height:5px;background:var(--ink)}
+.foot{position:absolute;left:var(--margin-x);bottom:52px;
+    font:400 17px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--grey)}
+.foot-r{position:absolute;right:var(--margin-x);bottom:52px;
+    font:600 17px/1 var(--font-display);letter-spacing:.14em;color:var(--grey)}
+
+h2{position:absolute;left:var(--margin-x);top:228px;width:1400px;
+    font:900 var(--h2-size)/.94 var(--font-display);letter-spacing:-.035em;text-transform:uppercase;color:var(--ink)}
+h2 em{font-style:normal;color:var(--red)}
+h2 span{color:var(--grey)}
+.lede{position:absolute;left:var(--margin-x);top:452px;width:1080px;
+    font:300 var(--lede-size)/1.5 var(--font-body);color:var(--grey-deep)}
+.lede b{font-weight:700;color:var(--ink)}
+
+/* ===========================================
+   SLIDE 1 — TITLE
+   =========================================== */
+.title-slide .block{position:absolute;left:1180px;top:0;width:740px;height:1080px;background:var(--red);z-index:1}
+.title-slide .block::after{content:"";position:absolute;left:96px;top:392px;width:296px;height:296px;
+    border:14px solid var(--paper);border-radius:50%}
+.title-slide .block::before{content:"";position:absolute;left:96px;top:540px;width:644px;height:14px;background:var(--paper)}
+.title-slide h1{position:absolute;left:var(--margin-x);top:296px;
+    font:900 var(--title-size)/.92 var(--font-display);letter-spacing:-.04em;text-transform:uppercase;color:var(--ink);z-index:2}
+.title-slide h1 span{display:block;color:var(--grey)}
+.title-slide .t-rule{position:absolute;left:var(--margin-x);top:238px;width:960px;height:6px;background:var(--ink);z-index:2}
+.title-slide .t-kicker{position:absolute;left:var(--margin-x);top:188px;
+    font:600 22px/1 var(--font-display);letter-spacing:.34em;text-transform:uppercase;color:var(--red);z-index:2}
+.title-slide .t-lede{position:absolute;left:var(--margin-x);top:566px;width:880px;
+    font:300 30px/1.5 var(--font-body);color:var(--grey-deep);z-index:2}
+.title-slide .meta{position:absolute;left:var(--margin-x);bottom:104px;display:flex;gap:92px;z-index:2}
+.title-slide .meta div{font:400 20px/1.5 var(--font-body);color:var(--grey)}
+.title-slide .meta strong{display:block;font:800 19px/1.5 var(--font-display);
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.title-slide .stat{position:absolute;left:1276px;top:744px;color:var(--paper);z-index:2}
+.title-slide .stat b{display:block;font:900 146px/.86 var(--font-display);letter-spacing:-.05em}
+.title-slide .stat em{display:block;font:600 20px/1.4 var(--font-display);letter-spacing:.2em;
+    text-transform:uppercase;font-style:normal;margin-top:18px;opacity:.88}
+
+/* ===========================================
+   STATEMENT SLIDE — one idea, full bleed type
+   =========================================== */
+.statement{background:var(--ink)}
+.statement .grid i,.statement .grid b{background:rgba(255,255,255,.08)}
+.statement .kicker{color:var(--red)}
+.statement .idx{color:#2e2e2e}
+.statement .hrule{background:var(--red)}
+.statement .foot,.statement .foot-r{color:#6a6a6a}
+.statement h2{color:var(--paper);top:300px;width:1560px;font-size:104px}
+.statement h2.narrow{width:960px;top:282px;font-size:76px;line-height:1.02}
+.statement h2 em{color:var(--red)}
+.statement .lede{color:#b4b4b4;top:700px;width:1240px}
+.statement .lede b{color:var(--paper)}
+
+/* ===========================================
+   STAT CARDS — 3 across the 1640px column
+   =========================================== */
+.cards{position:absolute;left:var(--margin-x);top:600px;display:flex;gap:40px;z-index:2}
+.card{width:520px;height:300px;border:3px solid var(--ink);padding:36px 34px;position:relative;background:var(--paper)}
+.card .n{font:900 26px/1 var(--font-display);color:var(--red);letter-spacing:-.02em}
+.card h3{font:800 30px/1.22 var(--font-display);letter-spacing:-.01em;text-transform:uppercase;color:var(--ink);margin:22px 0 16px}
+.card p{font:400 20px/1.46 var(--font-body);color:var(--grey-deep)}
+.card.fill{background:var(--red);border-color:var(--red)}
+.card.fill .n{color:var(--ink)}
+.card.fill h3,.card.fill p{color:var(--paper)}
+
+/* ===========================================
+   FIGURE ROW — big numbers with captions
+   =========================================== */
+.figs{position:absolute;left:var(--margin-x);display:flex;z-index:2}
+.figs div{padding-right:60px;margin-right:60px;border-right:1px solid var(--rule)}
+.figs div:last-child{border-right:0;padding-right:0;margin-right:0}
+.figs b{display:block;font:900 88px/.88 var(--font-display);letter-spacing:-.045em;color:var(--ink)}
+.figs b.hot{color:var(--red)}
+.figs span{display:block;font:600 16px/1.5 var(--font-display);letter-spacing:.2em;
+    text-transform:uppercase;color:var(--grey);margin-top:20px}
+
+/* ===========================================
+   DATA TABLE — thin Swiss rules, no boxes
+   =========================================== */
+.tbl{position:absolute;left:var(--margin-x);z-index:2;border-collapse:collapse}
+.tbl th{font:600 16px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:var(--grey);
+    text-align:left;padding:0 64px 20px 0;border-bottom:2px solid var(--ink)}
+.tbl td{font:400 30px/1 var(--font-body);color:var(--grey-deep);padding:26px 64px 26px 0;border-bottom:1px solid var(--rule)}
+.tbl td:first-child{font:800 30px/1 var(--font-display);color:var(--ink);letter-spacing:.02em}
+.tbl tr.hot td{color:var(--red);font-weight:700}
+.tbl tr.hot td:first-child{color:var(--red)}
+.tbl .big{font:900 34px/1 var(--font-display);color:var(--ink);letter-spacing:-.02em}
+
+.statement .tbl th{color:#6f6f6f;border-bottom-color:var(--red)}
+.statement .tbl td{color:#b4b4b4;border-bottom-color:#2b2b2b}
+.statement .tbl td:first-child{color:var(--paper)}
+
+/* ===========================================
+   EPOCH BARS — the real-budget training curve
+   =========================================== */
+.bars{position:absolute;left:var(--margin-x);bottom:176px;display:flex;align-items:flex-end;gap:14px;z-index:2}
+.bars .b{width:78px;background:var(--rule);position:relative}
+.bars .b.up{background:var(--ink)}
+.bars .b.top{background:var(--red)}
+.bars .b em{position:absolute;left:0;right:0;top:-44px;text-align:center;font:800 24px/1 var(--font-display);
+    font-style:normal;color:var(--grey)}
+.bars .b.top em{color:var(--red);font-size:30px;top:-52px}
+.bars .b i{position:absolute;left:0;right:0;bottom:-40px;text-align:center;font:600 16px/1 var(--font-display);
+    font-style:normal;color:var(--grey)}
+.floorline{position:absolute;left:var(--margin-x);width:1180px;border-top:3px dashed var(--red);z-index:3}
+.floorline span{position:absolute;left:0;top:-38px;font:800 19px/1 var(--font-display);
+    letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
+
+/* ===========================================
+   SIDE NOTE — red-tinted callout panel
+   =========================================== */
+.note{position:absolute;right:var(--margin-x);width:520px;background:var(--red-soft);border-left:6px solid var(--red);
+    padding:36px 34px;z-index:2}
+.note h4{font:800 20px/1 var(--font-display);letter-spacing:.18em;text-transform:uppercase;color:var(--red);margin-bottom:20px}
+.note p{font:400 22px/1.5 var(--font-body);color:var(--grey-deep)}
+.note p+p{margin-top:16px}
+
+/* ===========================================
+   LIST — numbered open items
+   =========================================== */
+.list{position:absolute;left:var(--margin-x);top:452px;width:1420px;z-index:2}
+.list li{list-style:none;display:flex;gap:34px;align-items:baseline;padding:26px 0;border-bottom:1px solid var(--rule)}
+.list li b{font:900 24px/1 var(--font-display);color:var(--red);min-width:46px}
+.list li p{font:400 28px/1.42 var(--font-body);color:var(--grey-deep)}
+.list li p strong{font-weight:700;color:var(--ink)}
+
+/* ===========================================
+   CLOSING SLIDE
+   =========================================== */
+.closing{background:var(--red)}
+.closing .grid i,.closing .grid b{background:rgba(255,255,255,.22)}
+.closing h2{color:var(--paper);top:352px;width:1500px;font-size:112px}
+.closing .lede{color:rgba(255,255,255,.9);top:700px;width:1180px}
+.closing .lede b{color:var(--paper)}
+.closing .kicker{color:var(--ink)}
+.closing .hrule{background:var(--ink)}
+.closing .idx{color:rgba(255,255,255,.35)}
+.closing .foot,.closing .foot-r{color:rgba(255,255,255,.75)}
+.closing .list li{border-bottom-color:rgba(255,255,255,.38)}
+.closing .list li b{color:var(--ink)}
+.closing .list li p{color:rgba(255,255,255,.88)}
+.closing .list li p strong{color:var(--paper)}
+
+/* ===========================================
+   REVEAL ANIMATIONS
+   Elements carry .reveal; the active slide gets
+   .visible, which plays the staggered entrance.
+   =========================================== */
+.reveal{opacity:0;transform:translateY(34px);
+    transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.slide.visible .reveal{opacity:1;transform:none}
+.slide.visible .reveal.d1{transition-delay:.08s}
+.slide.visible .reveal.d2{transition-delay:.18s}
+.slide.visible .reveal.d3{transition-delay:.28s}
+.slide.visible .reveal.d4{transition-delay:.38s}
+.slide.visible .reveal.d5{transition-delay:.48s}
+.slide.visible .reveal.d6{transition-delay:.58s}
+.slide.visible .reveal.d7{transition-delay:.68s}
+
+/* Red block wipes in from the right on the title slide */
+.wipe{transform:translateX(102%);transition:transform 1s var(--ease)}
+.slide.visible .wipe{transform:none}
+
+/* Bars grow from the baseline */
+.bars .b{transform:scaleY(.04);transform-origin:50% 100%;transition:transform .9s var(--ease)}
+.slide.visible .bars .b{transform:none}
+.slide.visible .bars .b:nth-child(1){transition-delay:.10s}
+.slide.visible .bars .b:nth-child(2){transition-delay:.16s}
+.slide.visible .bars .b:nth-child(3){transition-delay:.22s}
+.slide.visible .bars .b:nth-child(4){transition-delay:.28s}
+.slide.visible .bars .b:nth-child(5){transition-delay:.34s}
+.slide.visible .bars .b:nth-child(6){transition-delay:.40s}
+.slide.visible .bars .b:nth-child(7){transition-delay:.46s}
+.slide.visible .bars .b:nth-child(8){transition-delay:.52s}
+.slide.visible .bars .b:nth-child(9){transition-delay:.58s}
+.slide.visible .bars .b:nth-child(10){transition-delay:.64s}
+.slide.visible .bars .b:nth-child(11){transition-delay:.70s}
+
+/* ===========================================
+   DECK CHROME — progress bar + edit affordance
+   Outside the stage, so it may use viewport units.
+   =========================================== */
+.progress{position:fixed;left:0;top:0;height:4px;background:var(--red);z-index:1000;
+    transition:width .35s var(--ease)}
+.edit-hotzone{position:fixed;top:0;left:0;width:80px;height:80px;z-index:10000;cursor:pointer}
+.edit-toggle{position:fixed;top:16px;left:16px;z-index:10001;opacity:0;pointer-events:none;
+    transition:opacity .3s ease;border:2px solid var(--ink);background:var(--paper);
+    font:600 15px/1 var(--font-display);letter-spacing:.1em;padding:10px 14px;cursor:pointer;border-radius:0}
+.edit-toggle.show,.edit-toggle.active{opacity:1;pointer-events:auto}
+.edit-toggle.active{background:var(--red);border-color:var(--red);color:var(--paper)}
+[contenteditable="true"]{outline:2px dashed var(--red);outline-offset:6px;cursor:text}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E)">EDIT</button>
+
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+    <!-- ============ 01 · TITLE ============ -->
+    <section class="slide title-slide active">
+        <div class="grid"><i style="left:140px"></i><i style="left:620px"></i><i style="left:1100px"></i><b style="top:158px"></b><b style="top:900px"></b></div>
+        <div class="block wipe"></div>
+        <p class="t-kicker reveal d1">Surya · Downstream Application</p>
+        <div class="t-rule reveal d2"></div>
+        <h1 class="reveal d3">Active-Region<span>Segmentation</span></h1>
+        <p class="t-lede reveal d4">A foundation model fine-tuned on 400 solar images now disagrees with the answer key by about as much as the answer key disagrees with itself.</p>
+        <div class="meta reveal d5">
+            <div><strong>Date</strong>17 September 2026</div>
+            <div><strong>Author</strong>C. A. Young</div>
+            <div><strong>Scope</strong>Four notebooks, two budgets</div>
+        </div>
+        <div class="stat reveal d6"><b>0.637</b><em>IoU vs 0.632 label floor</em></div>
+    </section>
+
+    <!-- ============ 02 · THE TASK ============ -->
+    <section class="slide">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">01 — The task</p>
+            <p class="idx">02</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2">One image in,<br><span>one mask out.</span></h2>
+            <p class="lede reveal d3">Thirteen channels of SDO imagery in, an hourly active-region outline out — every model here scored by the same code on the same pairs.</p>
+            <div class="cards">
+                <div class="card reveal d4">
+                    <div class="n">01</div>
+                    <h3>Input</h3>
+                    <p>13-channel SDO stack — 8 AIA wavelengths and 5 HMI magnetic components, 4096 × 4096.</p>
+                </div>
+                <div class="card reveal d5">
+                    <div class="n">02</div>
+                    <h3>Model</h3>
+                    <p>366 M-parameter Surya backbone, frozen. LoRA adapters plus a segmentation head carry the fine-tune.</p>
+                </div>
+                <div class="card fill reveal d6">
+                    <div class="n">03</div>
+                    <h3>Score: overlap</h3>
+                    <p>IoU and Dice, never accuracy. Active regions cover ~1 % of the frame, so &ldquo;background everywhere&rdquo; is 99&nbsp;% accurate and useless.</p>
+                </div>
+            </div>
+            <p class="foot">Active-Region Segmentation</p>
+            <p class="foot-r">02 / 10</p>
+        </div>
+    </section>
+
+    <!-- ============ 03 · THE COLLAPSE ============ -->
+    <section class="slide statement">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">02 — The first run</p>
+            <p class="idx">03</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2 narrow">The loss improved.<br><em>The model learned<br>to predict nothing.</em></h2>
+            <p class="lede reveal d5" style="top:600px;width:940px">Recall fell to <b>0.000035</b> while precision rose to a perfect 1.00 — on the handful of pixels it still dared to call. Watch precision and recall together; the loss alone will lie to you.</p>
+            <table class="tbl reveal d3" style="top:300px;left:1180px">
+                <tr><th>Epoch</th><th>Loss</th><th>Recall</th></tr>
+                <tr><td>0</td><td>0.021</td><td>0.0054</td></tr>
+                <tr class="hot"><td>1</td><td>0.013 &darr;</td><td class="big" style="color:var(--red)">0.000035</td></tr>
+            </table>
+            <p class="foot">Active-Region Segmentation</p>
+            <p class="foot-r">03 / 10</p>
+        </div>
+    </section>
+
+    <!-- ============ 04 · THREE CAUSES ============ -->
+    <section class="slide">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">03 — Diagnosis</p>
+            <p class="idx">04</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2">Three causes.<br><span>All of them the setup,<br>none of them the model.</span></h2>
+            <div class="cards">
+                <div class="card reveal d3">
+                    <div class="n">01</div>
+                    <h3>The quietest images</h3>
+                    <p>A naive date cap picked mid-January 2011: 0.101&nbsp;% coverage, 987 background pixels per AR pixel. Fix: select the solar maximum, 2013–2015.</p>
+                </div>
+                <div class="card reveal d4">
+                    <div class="n">02</div>
+                    <h3>No positive weight</h3>
+                    <p>&ldquo;Predict nothing&rdquo; cost 0.24. With a measured pos-weight and a Dice term, the same prediction costs 8.4.</p>
+                </div>
+                <div class="card reveal d5">
+                    <div class="n">03</div>
+                    <h3>LR 10× too high</h3>
+                    <p>The config&rsquo;s own comment said 1e-4; the notebook passed 1e-3. Learning rate is now chosen per model.</p>
+                </div>
+            </div>
+            <p class="foot">Active-Region Segmentation</p>
+            <p class="foot-r">04 / 10</p>
+        </div>
+    </section>
+
+    <!-- ============ 05 · MEDIUM BUDGET ============ -->
+    <section class="slide">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">04 — Medium budget</p>
+            <p class="idx">05</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2">60 images:<br><span>honest, and not enough.</span></h2>
+            <p class="lede reveal d3" style="width:900px">Two seeds, bootstrap intervals, a calibrated threshold. Both seeds hit their best epoch at <b>epoch 1 of 10</b> and then overfit — the lesson was more images, not more epochs.</p>
+            <div class="figs reveal d4" style="top:auto;bottom:168px">
+                <div><b>0.437</b><span>IoU at 0.5 &middot; &plusmn;0.013</span></div>
+                <div><b class="hot">0.465</b><span>Best threshold</span></div>
+                <div><b>0.025</b><span>Seed spread</span></div>
+            </div>
+            <div class="note reveal d5" style="top:440px">
+                <h4>The honest report</h4>
+                <p>Training randomness and sampling uncertainty are the same size at this budget.</p>
+                <p>So the result is the pair <b>(0.459, 0.417)</b> — not one number to three decimals.</p>
+            </div>
+            <p class="foot">Active-Region Segmentation</p>
+            <p class="foot-r">05 / 10</p>
+        </div>
+    </section>
+
+    <!-- ============ 06 · THE LABEL FLOOR ============ -->
+    <section class="slide statement">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">05 — The floor</p>
+            <p class="idx">06</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2" style="top:268px">How good is<br><em>&ldquo;good enough&rdquo;?</em></h2>
+            <p class="lede reveal d3" style="top:610px;width:940px">Rebuild the answer key at ±40 G and again at ±60 G. Both are defensible readings of the same rule. They agree with each other at <b>IoU 0.632</b>.</p>
+            <div class="figs reveal d4" style="left:1160px;top:610px;display:block">
+                <div style="border:0;padding:0;margin:0">
+                    <b class="hot" style="font-size:180px;color:var(--red)">0.632</b>
+                    <span style="color:#b4b4b4">The label floor</span>
+                </div>
+            </div>
+            <p class="foot">Active-Region Segmentation</p>
+            <p class="foot-r">06 / 10</p>
+        </div>
+    </section>
+
+    <!-- ============ 07 · THE LIMB EFFECT ============ -->
+    <section class="slide">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">06 — What drives the score</p>
+            <p class="idx">07</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2">The Sun turned.<br><span>The score fell with it.</span></h2>
+            <p class="lede reveal d3" style="width:880px">Per-image IoU tracks one thing above all: how far the labelled regions sit from disk centre. Rule-vs-key agreement stayed flat — this is rotation and foreshortening, not the model or the labels.</p>
+            <table class="tbl reveal d4" style="top:686px">
+                <tr><th>Day (Jan 2013)</th><th>IoU</th><th>Coverage</th><th>Radial position</th></tr>
+                <tr><td>16</td><td>0.491</td><td>1.5&nbsp;%</td><td>0.45</td></tr>
+                <tr><td>17</td><td>0.411</td><td>1.2&nbsp;%</td><td>0.53</td></tr>
+                <tr class="hot"><td>18</td><td>0.360</td><td>0.9&nbsp;%</td><td>0.60 — toward the limb</td></tr>
+            </table>
+            <div class="note reveal d5" style="top:452px">
+                <h4>Correlation with IoU</h4>
+                <p><b>r = −0.94</b> &nbsp;distance from disk centre</p>
+                <p><b>r = +0.90</b> &nbsp;labelled area</p>
+                <p><b>r = −0.19</b> &nbsp;rule-vs-key agreement</p>
+            </div>
+            <p class="foot">Active-Region Segmentation</p>
+            <p class="foot-r">07 / 10</p>
+        </div>
+    </section>
+
+    <!-- ============ 08 · REAL BUDGET ============ -->
+    <section class="slide">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">07 — Real budget · in progress</p>
+            <p class="idx">08</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2" style="width:1180px;font-size:72px">400 images.<br><span>Still climbing at epoch 10.</span></h2>
+            <p class="lede reveal d3" style="top:448px;width:1020px">Epoch 0 alone beat the entire medium run (0.492 vs a best of 0.465), on a broader validation set spanning three Januaries. Validation loss was still setting new lows at epoch 9.</p>
+            <!-- Per-epoch IoU, seed 0. Bar heights = (IoU - 0.45) * 1180px -->
+            <div class="bars">
+                <div class="b" style="height:50px"><em>.492</em><i>0</i></div>
+                <div class="b" style="height:80px"><i>1</i></div>
+                <div class="b" style="height:96px"><i>2</i></div>
+                <div class="b" style="height:133px"><i>3</i></div>
+                <div class="b up" style="height:165px"><i>4</i></div>
+                <div class="b up" style="height:153px"><i>5</i></div>
+                <div class="b up" style="height:176px"><i>6</i></div>
+                <div class="b up" style="height:176px"><i>7</i></div>
+                <div class="b up" style="height:190px"><i>8</i></div>
+                <div class="b up" style="height:209px"><i>9</i></div>
+                <div class="b top" style="height:221px"><em>.637</em><i>10</i></div>
+            </div>
+            <div class="floorline reveal d6" style="bottom:391px;width:1040px"><span>Label floor 0.632</span></div>
+            <div class="note reveal d5" style="top:500px">
+                <h4>Snapshot, not a result</h4>
+                <p>Seed 0 of 5, running. The run&rsquo;s own output supersedes these numbers.</p>
+                <p>Five seeds ≈ 48–52 h; three ≈ 30 h.</p>
+            </div>
+            <p class="foot">Per-epoch IoU · seed 0 · 17 Sep 2026, 09:26</p>
+            <p class="foot-r">08 / 10</p>
+        </div>
+    </section>
+
+    <!-- ============ 09 · THE VERDICT ============ -->
+    <section class="slide statement">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">08 — Where that leaves us</p>
+            <p class="idx">09</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2" style="top:262px;font-size:96px">At 60 images, model error<br>dominated. At 400, it is<br><em>the size of the label noise.</em></h2>
+            <p class="lede reveal d3" style="top:672px">Below the floor, more data still buys accuracy. At it, further gains in pixel overlap cannot be told apart from a different choice of threshold in the labelling rule — which is the signal to change the question, not the model.</p>
+            <p class="foot">Active-Region Segmentation</p>
+            <p class="foot-r">09 / 10</p>
+        </div>
+    </section>
+
+    <!-- ============ 10 · OPEN ITEMS ============ -->
+    <section class="slide closing">
+        <div class="grid"><i style="left:140px"></i><i style="left:1100px"></i><b style="top:158px"></b></div>
+        <div class="frame">
+            <p class="kicker reveal d1">09 — Open</p>
+            <p class="idx">10</p>
+            <div class="hrule reveal d1"></div>
+            <h2 class="reveal d2" style="top:230px;font-size:86px;color:#fff">What comes next</h2>
+            <ul class="list reveal d3" style="top:392px">
+                <li><b>01</b><p><strong>Per-region scoring</strong> — detection rate, false alarms, position and area error. What a forecaster would actually use, and what the limb effect argues for.</p></li>
+                <li><b>02</b><p><strong>Three seeds or five</strong> for the real run — decided when seed 0 completes.</p></li>
+                <li><b>03</b><p><strong>Widen the label floor</strong> — vary blob size and brush size too, not only the ±G threshold.</p></li>
+                <li><b>04</b><p><strong>Test-time augmentation</strong> as a cheap extra uncertainty source, safe at inference.</p></li>
+            </ul>
+            <p class="foot">RESULTS_REPORT.md · downstream_apps/ar_segmentation</p>
+            <p class="foot-r">10 / 10</p>
+        </div>
+    </section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Fixed-stage scaling + keyboard / wheel / touch nav.
+   =========================================== */
+class SlidePresentation {
+    constructor(){
+        this.slides = document.querySelectorAll('.slide');
+        this.stage = document.getElementById('deckStage');
+        this.progress = document.getElementById('progress');
+        this.current = 0;
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupTouchNav();
+        this.showSlide(0);
+    }
+
+    /* Scale the whole 1920x1080 stage to fit the window; letterbox as needed. */
+    setupStageScale(){
+        const scale = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        scale();
+        window.addEventListener('resize', scale);
+    }
+
+    setupKeyboardNav(){
+        document.addEventListener('keydown', e => {
+            if (e.target.getAttribute('contenteditable') === 'true') return;
+            if (['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){ e.preventDefault(); this.next(); }
+            if (['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); this.prev(); }
+            if (e.key === 'Home'){ e.preventDefault(); this.showSlide(0); }
+            if (e.key === 'End'){ e.preventDefault(); this.showSlide(this.slides.length - 1); }
+        });
+    }
+
+    /* Wheel nav, throttled so one flick moves one slide. */
+    setupWheelNav(){
+        let lock = false;
+        window.addEventListener('wheel', e => {
+            if (lock || Math.abs(e.deltaY) < 18) return;
+            lock = true;
+            e.deltaY > 0 ? this.next() : this.prev();
+            setTimeout(() => lock = false, 700);
+        }, {passive:true});
+    }
+
+    setupTouchNav(){
+        let x0 = null;
+        window.addEventListener('touchstart', e => x0 = e.touches[0].clientX, {passive:true});
+        window.addEventListener('touchend', e => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            if (Math.abs(dx) > 55) dx < 0 ? this.next() : this.prev();
+            x0 = null;
+        }, {passive:true});
+    }
+
+    next(){ this.showSlide(this.current + 1); }
+    prev(){ this.showSlide(this.current - 1); }
+
+    showSlide(i){
+        this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+        this.slides.forEach((s, n) => {
+            s.classList.toggle('active', n === this.current);
+            s.classList.toggle('visible', n === this.current);
+        });
+        this.progress.style.width = ((this.current + 1) / this.slides.length * 100) + '%';
+    }
+}
+const deck = new SlidePresentation();
+
+/* ===========================================
+   INLINE TEXT EDITING
+   Hover the top-left corner or press E. Edits are
+   saved to localStorage; Ctrl+S downloads the file.
+   =========================================== */
+class InlineEditor {
+    constructor(){
+        this.isActive = false;
+        this.selector = 'h1, h2, h3, h4, p, td, th, span, em, b, i, strong, div.n';
+        this.restore();
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's' && this.isActive){ e.preventDefault(); this.download(); }
+        });
+    }
+    toggleEditMode(){
+        this.isActive = !this.isActive;
+        const btn = document.getElementById('editToggle');
+        btn.classList.toggle('active', this.isActive);
+        btn.textContent = this.isActive ? 'DONE · CTRL+S' : 'EDIT';
+        document.querySelectorAll('.slide ' + this.selector).forEach(el => {
+            if (el.children.length === 0) {
+                el.contentEditable = this.isActive;
+                if (this.isActive) el.addEventListener('blur', () => this.save(), {once:true});
+            }
+        });
+        if (!this.isActive) this.save();
+    }
+    /* Persist by slide index + element index so edits survive a reload. */
+    save(){
+        const data = {};
+        document.querySelectorAll('.slide').forEach((s, si) => {
+            s.querySelectorAll(this.selector).forEach((el, ei) => {
+                if (el.children.length === 0) data[si + ':' + ei] = el.innerHTML;
+            });
+        });
+        try { localStorage.setItem('ar-seg-deck', JSON.stringify(data)); } catch(err){}
+    }
+    restore(){
+        let data;
+        try { data = JSON.parse(localStorage.getItem('ar-seg-deck') || '{}'); } catch(err){ return; }
+        document.querySelectorAll('.slide').forEach((s, si) => {
+            s.querySelectorAll(this.selector).forEach((el, ei) => {
+                const v = data[si + ':' + ei];
+                if (v !== undefined && el.children.length === 0) el.innerHTML = v;
+            });
+        });
+    }
+    download(){
+        const clone = document.documentElement.cloneNode(true);
+        clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+        const blob = new Blob(['<!DOCTYPE html>\n' + clone.outerHTML], {type:'text/html'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'ar_segmentation_results.html';
+        a.click();
+    }
+}
+const editor = new InlineEditor();
+
+/* Edit affordance: JS hover with a 400ms grace period.
+   A CSS sibling selector would break here, because
+   pointer-events:none on the button cuts the hover chain. */
+const hotzone = document.querySelector('.edit-hotzone');
+const editToggle = document.getElementById('editToggle');
+let hideTimeout = null;
+const showBtn = () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); };
+const hideBtn = () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); };
+hotzone.addEventListener('mouseenter', showBtn);
+hotzone.addEventListener('mouseleave', hideBtn);
+editToggle.addEventListener('mouseenter', showBtn);
+editToggle.addEventListener('mouseleave', hideBtn);
+hotzone.addEventListener('click', () => editor.toggleEditMode());
+editToggle.addEventListener('click', () => editor.toggleEditMode());
+document.addEventListener('keydown', e => {
+    if ((e.key === 'e' || e.key === 'E') && e.target.getAttribute('contenteditable') !== 'true') editor.toggleEditMode();
+});
+</script>
+</body>
+</html>

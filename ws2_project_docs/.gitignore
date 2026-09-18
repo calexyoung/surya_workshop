@@ -1,0 +1,9 @@
+# The repo root ignores *.png (generated plots). The figures under images/ are
+# not generated here — they are extracted from the deck and referenced by
+# AR_SEGMENTATION_TALK.md, so the document is broken without them.
+!images/*.png
+
+# Derived from ar_segmentation_magnetogram.html; regenerate rather than commit
+# (14 MB combined). See AR_SEGMENTATION_TALK.md provenance for how.
+ar_segmentation_magnetogram.pdf
+ar_segmentation_magnetogram.pptx
